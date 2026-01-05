@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: crypto
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  backend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    command: bash -lc "npm install && npm run start"
+    environment:
+      DATABASE_URL: postgres://app:app@db:5432/crypto
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+
+  frontend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: bash -lc "npm install && npm run dev"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
